@@ -1,0 +1,17 @@
+version: '3.4'
+
+services:
+  kafka_poc:
+    image: ${DOCKER_REGISTRY-}kafkapoc
+    build:
+      context: .
+      dockerfile: Kafka_POC/Dockerfile
+
+  kafka:
+    image: spotify/kafka
+    ports:
+      - "2181:2181"
+      - "9092:9092"
+    environment:
+      - ADVERTISED_PORT=9092
+      - AUTO_CREATE_TOPICS=true

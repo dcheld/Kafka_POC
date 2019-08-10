@@ -1,15 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using Confluent.Kafka;
+using Kafka_POC.Service;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+using Swashbuckle.AspNetCore.Swagger;
 
 namespace Kafka_POC
 {
@@ -26,6 +22,19 @@ namespace Kafka_POC
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+            services.AddHostedService<Worker>();
+
+            services.AddSwaggerGen(swaggerConfig =>
+            {
+                swaggerConfig.SwaggerDoc("v1", Configuration.GetSection("SwaggerDoc:Info").Get<Info>());
+                swaggerConfig.DescribeAllEnumsAsStrings();
+            });
+
+            services.AddSingleton(Configuration.GetSection("ProducerConfig").Get<ProducerConfig>());
+            services.AddSingleton(Configuration.GetSection("ConsumerConfig").Get<ConsumerConfig>());
+            services.AddSingleton<KafkaConsumer>();
+
+            services.AddScoped<KafkaProducer>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -40,6 +49,12 @@ namespace Kafka_POC
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
+            app.UseSwagger();
+
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Kafka_POC API V1");
+            });
 
             app.UseHttpsRedirection();
             app.UseMvc();
